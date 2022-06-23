@@ -20,8 +20,6 @@ require_once __DIR__ . '/libs/System.php';
 require_once __DIR__ . '/helpers/debug.php';
 require_once __DIR__ . '/helpers/system.php';
 
-require __DIR__ . '/config/config.php';
-
 
 function render_table(Array $msgs){
     $cnt = count($msgs);
@@ -64,14 +62,49 @@ function render_table(Array $msgs){
         </tbody>
     </table>';
 
-    return "$css
-    <p>Han ocurrido algunos ($cnt) errores al procesar el archivo CSV. Demás productos fueron procesados con éxito.</p><br>\r\n 
+    return "$css     
     $table";
+}
+
+/*
+    Panel administraitivo
+*/
+if ( is_admin() ) {
+    add_action( 'admin_menu', 'bzz_csv_import', 100 );
+}
+
+
+function bzz_csv_import() {
+    add_submenu_page(
+        'edit.php?post_type=product',
+        __( 'Bzz CSV Import' ),
+        __( 'Bzz CSV import' ),
+        'manage_woocommerce', // Required user capability
+        'woo-connector',
+        'bzz_csv_import_admin_panel'
+    );
+}
+
+function bzz_csv_import_admin_panel() {
+    if (!current_user_can('administrator'))  {
+        wp_die( __('Su usuario no tiene permitido acceder') );
+    }
+
+    echo bzz_import_shortcode();
 }
 
 
 // function that runs when shortcode is called
-function bzz_import_shortcode() {
+function bzz_import_shortcode() 
+{   
+    $config =  include(__DIR__ . '/config/config.php');
+
+    ini_set("memory_limit", $config["memory_limit"] ?? "728M");
+    ini_set("max_execution_time", $config["max_execution_time"] ?? 1800);
+    ini_set("upload_max_filesize",  $config["upload_max_filesize"] ?? "50M");
+    ini_set("post_max_size",  $config["post_max_size"] ?? "50M");
+
+
     $out = '';
 
     if (isset($_POST['bzz_import'])){
@@ -130,7 +163,11 @@ function bzz_import_shortcode() {
         }
 
         if (!empty($errors)){
-            $out = render_table($errors);
+            $cnt_errors = count($errors);
+            $cnt_ok     = $cnt - $cnt_errors;
+
+            $out .= "<p>Han ocurrido algunos ($cnt_errors) errores al procesar el archivo CSV. Demás productos ($cnt_ok) fueron procesados con éxito.</p><br>\r\n";
+            $out .= render_table($errors);
         } else {
             $out = "<p>Se procesaron en el CSV todos (los $cnt) los productos correctamente.</p>";
         }
