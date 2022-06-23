@@ -106,7 +106,7 @@ function bzz_import_shortcode()
     ?>
         <script>
 
-        jQuery( document ).ready(function() {
+        document.addEventListener('DOMContentLoaded', function() {
             function csv_file_loaded(){
                 let file = jQuery('#csv_file').val();
                 
@@ -120,6 +120,7 @@ function bzz_import_shortcode()
 
         </script>
     <?php
+
     $config =  include(__DIR__ . '/config/config.php');
 
     ini_set("memory_limit", $config["memory_limit"] ?? "728M");
@@ -151,37 +152,43 @@ function bzz_import_shortcode()
         }
 
         $path = $_FILES['csv_file']['tmp_name'];
-        $rows = Files::getCSV($path, ';')['rows'];
+        $rows = Files::getCSV($path, $config["field_separator"])['rows'];
 
         $cnt  = count($rows);
 
         $errors = [];
         foreach ($rows as $row){
-            if (!isset($row['SKU'])){
+            if (!isset($row[ $config["fields"]["sku"] ])){
                 $errors[] = "Una fila no contiene SKU";
                 continue;
             }
 
+            $sku = $row[ $config["fields"]["sku"] ];
+
             if (count($row) <2){
-                $errors[] = "Nada que hacer con solo el SKU ({row['SKU']})";
+                $errors[] = "Nada que hacer con solo el SKU ($sku)";
                 continue;
             }
 
-            $pid = Products::getProductIdBySKU($row['SKU']);
+            $pid = Products::getProductIdBySKU($sku);
 
             // Podria ir acumulando errores pero seguir procesando,.... 
             if (empty($pid)){
-                $errors[] = 'SKU no encontrado: '. $row['SKU'];
+                $errors[] = 'SKU no encontrado: '. $sku;
                 continue;
             }
 
-            if (isset($row['stockqty'])){
-                Products::updateStock($pid, $row['stockqty']);
+            $qty = $row['stockqty'] ?? null;
+
+            if ($qty !== null){
+                Products::updateStock($pid, $qty);
             }
 
-            if (isset($row['Regular Price'])){
-                $price = str_replace(',', '.', $row['Regular Price']);
-                Products::updatePrice($pid, $price);
+            $regular_price = $row['Regular Price'] ?? null;
+
+            if ($regular_price !== null){
+                $regular_price = str_replace(',', '.', $regular_price);
+                Products::updatePrice($pid, $regular_price);
             }
         }
 

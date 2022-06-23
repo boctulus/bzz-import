@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Plugin Name: Bzz CSV import
+ * Plugin Name: Bzz CSV Product Import
  * Plugin URI:  
  * Description: 
  * Version:     1.0.3
