@@ -3,6 +3,14 @@
 Desarrollado por
 Pablo Bozzolo <boctulus>
 
+Descripción:
+
+Importador de productos desde CSV para WooCommerce.
+
+Se provee un shortcode [bzz-import] y además es accesible desde el menú de Admin:
+
+    WooCommerce > Productos > Bzz CSV Import
+
 En esta versión solo son soportados los campos:
 
 SKU
