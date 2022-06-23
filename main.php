@@ -26,17 +26,22 @@ function render_table(Array $msgs){
 
     $css = '
     <style>
-	.demo {
+    .bzz-errors-table-container {
+    }
+	.bzz-errors-table {
+        height: 250px; 
+        overflow-y: scroll;
+        display: block;
 		border:1px solid #C0C0C0;
 		border-collapse:collapse;
 		padding:5px;
 	}
-	.demo th {
+	.bzz-errors-table th {
 		border:1px solid #C0C0C0;
 		padding:5px;
 		background:#F0F0F0;
 	}
-	.demo td {
+	.bzz-errors-table td {
 		border:1px solid #C0C0C0;
 		padding:5px;
 	}
@@ -50,17 +55,18 @@ function render_table(Array $msgs){
         </tr>";
     }
 
-   $table = '
-    <table class="demo">
-        <thead>
-        <tr>
-            <th>Errores</th>
-        </tr>
-        </thead>
-        <tbody>
-        '.$trs.'
-        </tbody>
-    </table>';
+   $table = '<div class="bzz-errors-table-container">
+        <table class="bzz-errors-table">
+            <thead>
+            <tr>
+                <th>Errores</th>
+            </tr>
+            </thead>
+            <tbody>
+            '.$trs.'
+            </tbody>
+        </table>
+    </div>';
 
     return "$css     
     $table";
@@ -97,6 +103,23 @@ function bzz_csv_import_admin_panel() {
 // function that runs when shortcode is called
 function bzz_import_shortcode() 
 {   
+    ?>
+        <script>
+
+        jQuery( document ).ready(function() {
+            function csv_file_loaded(){
+                let file = jQuery('#csv_file').val();
+                
+                if (file != ''){
+                    jQuery('#submit_csv').attr("disabled", false);
+                }
+            }
+
+            jQuery('#csv_file').on("change", function(){ csv_file_loaded(); });
+        });
+
+        </script>
+    <?php
     $config =  include(__DIR__ . '/config/config.php');
 
     ini_set("memory_limit", $config["memory_limit"] ?? "728M");
@@ -183,7 +206,7 @@ function bzz_import_shortcode()
     <input type="file" id="csv_file" name="csv_file">
     <input type="hidden" name="bzz_import">
     <br><br>
-    <input type="submit">
+    <input type="submit" id="submit_csv" disabled>
     </form>';
     
     return $out;
