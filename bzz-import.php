@@ -17,10 +17,10 @@ defined('ABSPATH') || die;
 */
 
 
-if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
-	ini_set('display_errors', 1);
-	ini_set('display_startup_errors', 1);
-	error_reporting(E_ALL);
-}
+// if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
+// 	ini_set('display_errors', 1);
+// 	ini_set('display_startup_errors', 1);
+// 	error_reporting(E_ALL);
+// }
 
 include 'main.php';

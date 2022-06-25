@@ -116,6 +116,16 @@ function bzz_import_shortcode()
             }
 
             jQuery('#csv_file').on("change", function(){ csv_file_loaded(); });
+
+            /*
+                Agregado de Esteban Toloza
+            */
+
+            document.getElementById("submit_csv").addEventListener("click", loadingNotification)
+			
+            function loadingNotification() {
+				document.getElementById("loading-text").innerHTML = "Actualizando productos, NO CIERRE ESTA PÁGINA!";
+			}
         });
 
         </script>
