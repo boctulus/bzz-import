@@ -23,56 +23,7 @@ require_once __DIR__ . '/helpers/system.php';
 require_once __DIR__ . '/ajax.php';
 
 
-function render_table(Array $msgs){
-    $cnt = count($msgs);
 
-    $css = '
-    <style>
-    .bzz-errors-table-container {
-    }
-	.bzz-errors-table {
-        height: 250px; 
-        overflow-y: scroll;
-        display: block;
-		border:1px solid #C0C0C0;
-		border-collapse:collapse;
-		padding:5px;
-	}
-	.bzz-errors-table th {
-		border:1px solid #C0C0C0;
-		padding:5px;
-		background:#F0F0F0;
-	}
-	.bzz-errors-table td {
-		border:1px solid #C0C0C0;
-		padding:5px;
-	}
-    </style>';
-
-    $trs = '';
-    foreach ($msgs as $msg){
-        $trs .= "
-        <tr>
-            <td>$msg</td>
-        </tr>";
-    }
-
-   $table = '<div class="bzz-errors-table-container">
-        <table class="bzz-errors-table">
-            <thead>
-            <tr>
-                <th>Errores</th>
-            </tr>
-            </thead>
-            <tbody>
-            '.$trs.'
-            </tbody>
-        </table>
-    </div>';
-
-    return "$css     
-    $table";
-}
 
 /*
     Panel administraitivo
@@ -106,6 +57,26 @@ function bzz_csv_import_admin_panel() {
 function bzz_import_shortcode() 
 {   
     ?>
+        <style>
+            .bzz-errors-table {
+                height: 250px; 
+                overflow-y: scroll;
+                display: block;
+                border:1px solid #C0C0C0;
+                border-collapse:collapse;
+                padding:5px;
+            }
+            .bzz-errors-table th {
+                border:1px solid #C0C0C0;
+                padding:5px;
+                background:#F0F0F0;
+            }
+            .bzz-errors-table td {
+                border:1px solid #C0C0C0;
+                padding:5px;
+            }
+        </style>
+
         <script>
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -128,9 +99,51 @@ function bzz_import_shortcode()
                     contentType: false, // important
                     data: form_data,
                     success: function(res) {
-                        console.log(res);
+                        clearAjaxNotification();
+
+                        if (typeof res['message'] != 'undefined'){
+                            let msg = res['message'];
+
+                            if (typeof res['errors'] != 'undefined'){
+                                let trs = '';
+                                for (let i=0; i<res['errors'].length; i++){
+                                    //console.log(res['errors'][i]);
+
+                                    trs += `
+                                    <tr>
+                                        <td>${res['errors'][i]}</td>
+                                    </tr>`;
+                                }
+
+                                msg = msg + `<p></p>
+                                <div class="bzz-errors-table-container">
+                                    <table class="bzz-errors-table">
+                                        <thead>
+                                        <tr>
+                                            <th>Errores</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="tbody-bzz-errors-table" style="width:100%">
+                                            ${trs}
+                                        </tbody>
+                                    </table>
+                                </div>`
+                            }
+
+                            setNotification(msg);
+                        }
+                        
+                        
+
+                        console.log(res);                        
                     },
                     error: function(res) {
+                        clearAjaxNotification();
+
+                        if (typeof res['message'] != 'undefined'){
+                            setNotification(res['message']);
+                        }
+
                         console.log(res);
                         console.log("An error occured, please try again.");         
                     }
@@ -153,10 +166,18 @@ function bzz_import_shortcode()
                 Agregado de Esteban Toloza
             */
 
-            document.getElementById("submit_csv").addEventListener("click", loadingNotification)
+            document.getElementById("submit_csv").addEventListener("click", loadingAjaxNotification)
 			
-            function loadingNotification() {
+            function setNotification(msg){
+                document.getElementById("bzz-notifications").innerHTML = msg;
+            }
+
+            function loadingAjaxNotification() {
 				document.getElementById("loading-text").innerHTML = "Actualizando productos, NO CIERRE ESTA PÁGINA!";
+			}
+
+            function clearAjaxNotification() {
+				document.getElementById("loading-text").innerHTML = "";
 			}
         });
 
@@ -188,6 +209,11 @@ function bzz_import_shortcode()
     </form>
     
     <div id="loading-text"></div>
+
+    <div id="bzz-notifications">
+        
+    </div>
+    
     ';
     
     return $out;
