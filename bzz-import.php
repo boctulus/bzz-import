@@ -4,7 +4,7 @@
  * Plugin Name: Bzz CSV Product Import
  * Plugin URI:  
  * Description: 
- * Version:     1.0.3
+ * Version:     1.0.4
  * Author:      Pablo Bozzolo
  * Author URI:  
  * License:

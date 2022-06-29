@@ -208,6 +208,7 @@ function bzz_import_shortcode()
     <input type="submit" id="submit_csv" disabled>
     </form>
     
+    <p></p>
     <div id="loading-text"></div>
 
     <div id="bzz-notifications">
