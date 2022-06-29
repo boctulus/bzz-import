@@ -93,7 +93,7 @@ function post_csv(WP_REST_Request $req)
         }
 
         if (!isset($_FILES['csv_file'])){
-            $error->add(400, 'Algo esta mal. No se ha recibido archivo como se espera');
+            $error->add(400, 'Algo esta mal. No se ha recibido archivo como se espera: '. var_export($_FILES, true));
             return $error;
         }
 

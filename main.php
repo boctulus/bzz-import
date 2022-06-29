@@ -109,30 +109,35 @@ function bzz_import_shortcode()
         <script>
 
         document.addEventListener('DOMContentLoaded', function() {
-            function submit_csv(){
-                var fd = new FormData();
-                fd.append('file', this.files[0]); // since this is your file input
+            function submit_csv(event){
+                event.preventDefault();
 
-                $.ajax({
-                    url: "<?= Url::currentUrl() ?>index.php/Task_controller/upload_tasksquestion",
+                var file_data = jQuery('#csv_file').prop('files')[0];   
+                var form_data = new FormData();                  
+                form_data.append('csv_file', file_data);
+
+                const base_url = '<?= home_url('/') ?>';
+                const url = base_url + 'wp-json/bzz-import/v1/post-csv';
+
+                jQuery.ajax({
+                    url: url, // post-csv
                     type: "post",
                     dataType: 'json',
+                    cache: false,
                     processData: false, // important
                     contentType: false, // important
-                    data: fd,
-                    success: function(text) {
-                        alert(text);
-                        if(text == "success") {
-                            alert("Your image was uploaded successfully");
-                        }
+                    data: form_data,
+                    success: function(res) {
+                        console.log(res);
                     },
-                    error: function() {
-                        alert("An error occured, please try again.");         
+                    error: function(res) {
+                        console.log(res);
+                        console.log("An error occured, please try again.");         
                     }
                 });
             }
 
-            jQuery('#submit_csv_form').on("submit", function(){ submit_csv(); });
+            jQuery('#submit_csv_form').on("submit", function(event){ submit_csv(event); });
 
             function csv_file_loaded(){
                 let file = jQuery('#csv_file').val();
@@ -180,7 +185,10 @@ function bzz_import_shortcode()
     <input type="hidden" name="bzz_import">
     <br><br>
     <input type="submit" id="submit_csv" disabled>
-    </form>';
+    </form>
+    
+    <div id="loading-text"></div>
+    ';
     
     return $out;
 }
