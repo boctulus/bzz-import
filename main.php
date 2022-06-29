@@ -20,6 +20,8 @@ require_once __DIR__ . '/libs/System.php';
 require_once __DIR__ . '/helpers/debug.php';
 require_once __DIR__ . '/helpers/system.php';
 
+require_once __DIR__ . '/ajax.php';
+
 
 function render_table(Array $msgs){
     $cnt = count($msgs);
@@ -107,6 +109,31 @@ function bzz_import_shortcode()
         <script>
 
         document.addEventListener('DOMContentLoaded', function() {
+            function submit_csv(){
+                var fd = new FormData();
+                fd.append('file', this.files[0]); // since this is your file input
+
+                $.ajax({
+                    url: "<?= Url::currentUrl() ?>index.php/Task_controller/upload_tasksquestion",
+                    type: "post",
+                    dataType: 'json',
+                    processData: false, // important
+                    contentType: false, // important
+                    data: fd,
+                    success: function(text) {
+                        alert(text);
+                        if(text == "success") {
+                            alert("Your image was uploaded successfully");
+                        }
+                    },
+                    error: function() {
+                        alert("An error occured, please try again.");         
+                    }
+                });
+            }
+
+            jQuery('#submit_csv_form').on("submit", function(){ submit_csv(); });
+
             function csv_file_loaded(){
                 let file = jQuery('#csv_file').val();
                 
@@ -141,84 +168,13 @@ function bzz_import_shortcode()
 
     $out = '';
 
-    if (isset($_POST['bzz_import'])){
-
-        /*
-            array (
-            'csv_file' => 
-            array (
-                'name' => 'test.csv',
-                'type' => 'text/csv',
-                'tmp_name' => 'D:\\wamp64\\tmp\\phpAD9.tmp',
-                'error' => 0,
-                'size' => 84,
-            ),
-            )
-        */
-        if (empty($_FILES['csv_file'])){ 
-            $error = new WP_Error();
-            $error->add(500, 'Error al subir archivo');
-            return $error;
-        }
-
-        $path = $_FILES['csv_file']['tmp_name'];
-        $rows = Files::getCSV($path, $config["field_separator"])['rows'];
-
-        $cnt  = count($rows);
-
-        $errors = [];
-        foreach ($rows as $row){
-            if (!isset($row[ $config["fields"]["sku"] ])){
-                $errors[] = "Una fila no contiene SKU";
-                continue;
-            }
-
-            $sku = $row[ $config["fields"]["sku"] ];
-
-            if (count($row) <2){
-                $errors[] = "Nada que hacer con solo el SKU ($sku)";
-                continue;
-            }
-
-            $pid = Products::getProductIdBySKU($sku);
-
-            // Podria ir acumulando errores pero seguir procesando,.... 
-            if (empty($pid)){
-                $errors[] = 'SKU no encontrado: '. $sku;
-                continue;
-            }
-
-            $qty = $row['stockqty'] ?? null;
-
-            if ($qty !== null){
-                Products::updateStock($pid, $qty);
-            }
-
-            $regular_price = $row['Regular Price'] ?? null;
-
-            if ($regular_price !== null){
-                $regular_price = str_replace(',', '.', $regular_price);
-                Products::updatePrice($pid, $regular_price);
-            }
-        }
-
-        if (!empty($errors)){
-            $cnt_errors = count($errors);
-            $cnt_ok     = $cnt - $cnt_errors;
-
-            $out .= "<p>Han ocurrido algunos ($cnt_errors) errores al procesar el archivo CSV. Demás productos ($cnt_ok) fueron procesados con éxito.</p><br>\r\n";
-            $out .= render_table($errors);
-        } else {
-            $out = "<p>Se procesaron en el CSV todos (los $cnt) los productos correctamente.</p>";
-        }
-
-    }
+    // ...
 
     $out .= '
     
     <h3>Bzz CSV import</h3>
 
-    <form action="'. Url::currentUrl() .'" method="post" enctype="multipart/form-data">
+    <form id="submit_csv_form">
     <label for="csv_file">Selecciona el archivo:</label>
     <input type="file" id="csv_file" name="csv_file">
     <input type="hidden" name="bzz_import">

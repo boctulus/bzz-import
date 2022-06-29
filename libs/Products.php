@@ -1327,6 +1327,7 @@ class Products
 
 		$obj['id'] = $pid;;
 		$obj['type'] = $product->get_type();
+        $obj['product_url'] = $product->get_product_url(); // si es externo => link afiliado
 		$obj['name'] = $product->get_name();
 		$obj['slug'] = $product->get_slug();
 		$obj['status'] = $product->get_status();
