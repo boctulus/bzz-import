@@ -55,7 +55,7 @@ function post_csv(\WP_REST_Request $req)
 
             $msg .= "Han ocurrido algunos ($cnt_errors) errores al procesar el archivo CSV. Se procesaron $processed productos.";
         } else {
-            $msg = "Se procesaron en el CSV $processed de $total productos.";
+            $msg = "Se procesaron en el CSV un total de $processed de $total productos.";
         }
         
         $res = [

@@ -2,6 +2,13 @@
 
 /*
     @author Pablo Bozzolo < boctulus@gmail.com >
+
+    TO-DO
+
+    - Los campos deben definirse todos en algun lado y deben poder mapearse
+    usando un Transformer
+    
+    - Podria conectarse a una API o Google Sheets
 */
 
 /*
