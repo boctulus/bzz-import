@@ -1,0 +1,6 @@
+At boot
+-------
+
+Los archivos .php en esta carpeta son incluidos automaticamente excepto que comiencen con underscore ("_")
+
+Son cargados luego de los helpers

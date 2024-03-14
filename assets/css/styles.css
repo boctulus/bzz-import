@@ -1,0 +1,20 @@
+
+.gf_sync_wrap {
+	max-width: 800px;
+	margin-top: 20px;
+}
+
+.gf_sync_h3 {
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 5px;
+}
+
+
+/*
+	Extras que podria utilizar
+*/
+
+#loading-text {
+	margin-top:-30px;
+}
+
