@@ -92,6 +92,7 @@ function process_file($path)
             if (!isset($row[ $config["fields"]["sku"] ])){
                 $errors[] = "Una fila no contiene SKU";
                 unset($rows[$ix]);
+                $tot--;
                 continue;
             }
     

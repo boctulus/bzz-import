@@ -120,7 +120,7 @@ function bzz_import_shortcode()
             }
 
             function loadingAjaxNotification() {
-                document.getElementById("loading-text").innerHTML = "Actualizando productos, NO CIERRE ESTA PÁGINA!";
+                document.getElementById("loading-text").innerHTML = "<p>ACTUALIZANDO PRODUCTOS. NO CIERRE ESTA PÁGINA!</p>";
             }
 
             function clearAjaxNotification() {

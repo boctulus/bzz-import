@@ -74,5 +74,11 @@ function bzz_csv_import_admin_panel() {
         wp_die( __('Su usuario no tiene permitido acceder') );
     }
 
-    echo bzz_import_shortcode();
+    ?>
+
+    <section class="notice">
+        <?= bzz_import_shortcode() ?>
+    </section>
+
+    <?php
 }
