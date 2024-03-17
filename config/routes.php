@@ -9,6 +9,6 @@
 return [
     // rutas
 
-    '/admin/wipe'   => 'boctulus\SW\controllers\AdminTasksController@wipe',
-    '/admin/run'    => 'boctulus\SW\controllers\AdminTasksController@run',
+    '/admin/wipe'          => 'boctulus\SW\controllers\AdminTasksController@wipe',
+    '/admin/run'           => 'boctulus\SW\controllers\AdminTasksController@run',
 ];

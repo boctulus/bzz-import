@@ -89,7 +89,7 @@ function process_file($path)
         $errors[] = "Sin productos?";
     } else {
         foreach ($rows as $ix => $row){
-            if (!isset($row[ $config["fields"]["sku"] ])){
+            if (!isset($row[ $config["fields"]["sku"] ]) || empty($row[ $config["fields"]["sku"] ])){
                 $errors[] = "Una fila no contiene SKU";
                 unset($rows[$ix]);
                 $tot--;

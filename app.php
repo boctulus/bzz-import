@@ -99,3 +99,5 @@ if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 } else {
     ini_set('display_errors', 0);
 }
+
+credits_to_author();
