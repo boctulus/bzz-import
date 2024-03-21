@@ -3,6 +3,21 @@
 use boctulus\SW\core\libs\StdOut;
 use boctulus\SW\core\libs\System;
 
+/*
+    Ej:
+
+    bg_com("bzz_import do_process")
+*/
+function bg_com(string $command, $output_path = null){
+    $php = System::getPHP();
+    $dir = ROOT_PATH;
+
+    $cmd = "$php {$dir}com $command";
+    $pid = System::runInBackground($cmd, $output_path);
+
+    return $pid;
+}
+
 function is_cli(){
 	return (php_sapi_name() == 'cli');
 }

@@ -4,7 +4,7 @@ namespace boctulus\SW\core\libs;
 
 class System
 {
-    static protected $res_code;
+    static $res_code;
 
     static function getOS(){
         return defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : PHP_OS;
@@ -70,6 +70,17 @@ class System
     }
 
     /*
+        Ej:
+
+        $git_installed = System::inPATH('git');
+    */
+    static function inPATH(string $command){
+        $w = System::isWindows() ? 'where.exe' : 'where';
+
+        return exec("$w $command", $output, $exit_code) == 0;
+    }
+
+    /*
         Returns PHP path
         as it is needed to be used with runInBackground()
 
@@ -105,7 +116,7 @@ class System
         https://gist.github.com/damienalexandre/1300820
         https://stackoverflow.com/questions/13257571/call-command-vs-start-with-wait-option
     */
-    static function runInBackground(string $cmd, string $output_path = null, $ignore_user_abort = true, int $execution_time = null, $working_dir = null)
+    static function runInBackground(string $cmd, $output_path = null, $ignore_user_abort = true, int $execution_time = null, $working_dir = null)
     {
         ignore_user_abort($ignore_user_abort);
 
@@ -190,7 +201,7 @@ class System
     }
 
 
-    static function exec($command, ...$args){
+    static function exec(string $command, ...$args){
         $extra = implode(' ', array_values($args));
 
         exec("$command $extra", $ret, static::$res_code);
@@ -199,18 +210,29 @@ class System
     }
 
     /*
-        Ejecuta un comando / script situandose primero en el root del proyecto
+        Ejecuta un comando / script situandose primero en el directorio especificado
+
+        Ej:
+
+        $git_log_repo_1 = System::execAt("git log", $path_repo_1)
     */
-    static function execAtRoot($command, ...$args){
+    static function execAt(string $command, string $dir, ...$args){
         $extra = implode(' ', array_values($args));
 
         $current_dir = getcwd();
 
-		chdir(ROOT_PATH);
+		chdir($dir);
         exec("$command $extra", $ret, static::$res_code);
         chdir($current_dir);
         
         return $ret;
+    }
+
+    /*
+        Ejecuta un comando / script situandose primero en el root del proyecto
+    */
+    static function execAtRoot(string $command, ...$args){
+        return static::execAt($command, ROOT_PATH, ...$args);
     }
 
     static function resultCode(){
@@ -220,7 +242,7 @@ class System
     /*
         Ejecuta un comando "com"
     */
-    static function com($command, ...$args){
+    static function com(string $command, ...$args){
         return static::execAtRoot(static::getPHP() . " com $command", ...$args);
     }
 
@@ -246,7 +268,7 @@ class System
     /**
      * Determines whether a PHP ini value is changeable at runtime.
      *
-     * Tomado del core de WordPress
+     * Taken from WordPress core 
      * 
      * Uso. Ej:
      * 
@@ -266,11 +288,6 @@ class System
             if ( function_exists( 'ini_get_all' ) ) {
                 $ini_all = ini_get_all();
             }
-        }
-
-        // Bit operator to workaround https://bugs.php.net/bug.php?id=44936 which changes access level to 63 in PHP 5.2.6 - 5.2.17.
-        if ( isset( $ini_all[ $setting ]['access'] ) && ( INI_ALL === ( $ini_all[ $setting ]['access'] & 7 ) || INI_USER === ( $ini_all[ $setting ]['access'] & 7 ) ) ) {
-            return true;
         }
 
         // If we were unable to retrieve the details, fail gracefully to assume it's changeable.

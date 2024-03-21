@@ -49,6 +49,8 @@ if (php_sapi_name() == "cli"){
 $path = ETC_PATH . 'productos.csv';  // <--------- hardcoded
 $rows = Files::getCSV($path)['rows'];
 
+$sku  = isset($_GET['sku']) ? explode(',',$_GET['sku']) : null;
+
 /*
 	Sincronizar !!!
 */

@@ -423,27 +423,39 @@ class Products extends Posts
 
     /*
         Setea precios
-
-        Es responsabilidad del programador aplicar static::formatMoney() 
-        a cualquier cantidad de dinero previamente
     */
-    static function setPrices(&$product, $args)
+    static function setPrices(&$product, $args, $allow_zero_for_sale_price = false, bool $format_money = true)
     {
         $price = $args['price'] ?? $args['display_price'] ?? null;
 
         if ($price !== null){
+            if ($format_money){
+                $price = static::formatMoney($price);
+            }
+            
             $product->set_price($price);
         }
         
         // precio sin descuentos
-        $regular_price = $args['regular_price'] ?? $args['display_regular_price'] ?? $args['price'] ?? null;
+        $regular_price = $args['regular_price'] ?? $args['price'] ?? null;
 
         if ($regular_price !== null){
+            if ($format_money){
+                $regular_price = static::formatMoney($regular_price);
+            }
+
             $product->set_regular_price($regular_price);
         }
 
         if (isset($args['sale_price'])){
-            $product->set_sale_price($args['sale_price']);
+            if ($allow_zero_for_sale_price || (!$allow_zero_for_sale_price && $args['sale_price'] != 0)){
+
+                if ($format_money){
+                    $args['sale_price'] = static::formatMoney($args['sale_price']);
+                }
+                
+                $product->set_sale_price($args['sale_price']);
+            }
         }
     }
 
@@ -919,7 +931,7 @@ class Products extends Posts
     static function setImages(int $pid, array $images, $featured_img = null){
         $att_ids = [];
 
-        $featured_img = $featured_img ?? is_array($images) ? $images[0] : $images;
+        $featured_img = $featured_img ?? is_array($images) ? ($images[0] ?? null) : $images;
 
         // dd([
         //     'pid'      => $pid,
@@ -950,8 +962,6 @@ class Products extends Posts
 
             static::setDefaultImage($pid, $att_id);
         }
-
-        dd($att_id, 'ATT ID'); //////////
 
         if (count($att_ids) >0){
             static::setImagesForPost($pid, $att_ids);
@@ -1005,7 +1015,7 @@ class Products extends Posts
 
         Products::updateProductBySKU($args, 'ARRAY');
     */
-    static function updateProductBySKU($args, string $return = 'OBJECT')
+    static function updateProductBySKU($args, string $return = 'OBJECT', $allow_zero_for_sale_price = false)
     {
         if (!isset($args['sku']) || empty($args['sku'])){
             dd($args);
@@ -1043,7 +1053,7 @@ class Products extends Posts
         }
 
         // Si hay cambio de tipo de producto, lo actualizo
-        if ($type != $args['type']){
+        if (!empty($args['type']) && $type != $args['type']){
             self::updateProductTypeByProductID($pid, $args['type']);
         }
 
@@ -1083,7 +1093,7 @@ class Products extends Posts
 
         // Prices
 
-        static::setPrices($product, $args);
+        static::setPrices($product, $args, $allow_zero_for_sale_price);
         
         if( isset($args['sale_from'])){
             $product->set_date_on_sale_from($args['sale_from']);
@@ -1122,9 +1132,7 @@ class Products extends Posts
    
         // Stock    
        
-        if(!$args['virtual']) {           
-            $product->set_manage_stock( isset($args['manage_stock']) ? $args['manage_stock'] : true );
-
+        if(!$args['virtual']) {
             if (isset($args['stock_status'])){
                 if ($args['stock_status'] === true || $args['stock_status'] === 1 || $args['stock_status'] === 'instock'){
                     $stock_status = true;
@@ -1134,12 +1142,22 @@ class Products extends Posts
             }
 
             $product->set_stock_status($stock_status ?? 'instock'); 
-            // update_post_meta( $pid, '_stock_status', $stock_status);
-            
-            if( isset( $args['manage_stock'] ) && $args['manage_stock'] ) {
-                $product->set_stock_quantity( $args['stock_quantity'] );
-                $product->set_backorders( isset( $args['backorders'] ) ? $args['backorders'] : 'no' ); // 'yes', 'no' or 'notify'
+
+            // Stock && manage status
+
+            $stock = $args['stock_quantity'] ?? $args['stock'] ?? null;
+
+            if ($stock !== null){
+                $product->set_stock_quantity($stock);
             }
+
+            $manage_stock = ($stock !== null) ? true : ($args['manage_stock'] ?? null);
+
+            if ($manage_stock !== null){
+                $product->set_manage_stock($manage_stock);
+            }
+
+            $product->set_backorders( isset( $args['backorders'] ) ? $args['backorders'] : 'no' ); // 'yes', 'no' or 'notify'    
         }
 
         // Sold Individually
@@ -1225,10 +1243,15 @@ class Products extends Posts
             
 
         // Images and Gallery    
-        static::setImages($pid, $args['gallery_images'] ?? $args['images'] ?? [], $args['image']);        
 
+        $galery_imgs = $args['gallery_images'] ?? $args['images'] ?? [];
+        $featured    = $args['image'] ?? null;
 
-        if ($args['type'] == 'variable'){
+        if (!empty($galery_imgs)){
+            static::setImages($pid, $galery_imgs, $featured);     
+        }
+
+        if (isset($args['type']) && $args['type'] == 'variable'){
             $variation_ids = $product->get_children();
             //dd($variation_ids, 'V_IDS');
             
@@ -1589,7 +1612,7 @@ class Products extends Posts
 
         @param string $return puede ser 'OBJECT' o 'INTEGER'
     */
-    static function createProduct(Array $args, string $return = 'OBJECT')
+    static function createProduct(Array $args, string $return = 'OBJECT', $allow_zero_for_sale_price = false)
     {
         if (isset($args['sku']) && !empty($args['sku']) && !empty(static::getProductIDBySKU($args['sku']))){
             throw new \InvalidArgumentException("SKU {$args['sku']} ya está en uso.");
@@ -1627,7 +1650,7 @@ class Products extends Posts
 
         // Prices
 
-        static::setPrices($product, $args);
+        static::setPrices($product, $args, $allow_zero_for_sale_price);
         
         if( isset($args['sale_from'])){
             $product->set_date_on_sale_from($args['sale_from']);
@@ -1671,13 +1694,23 @@ class Products extends Posts
             }
 
             $product->set_stock_status($stock_status ?? 'instock'); 
-            // update_post_meta( $pid, '_stock_status', $stock_status);  
-            
-            if(isset( $args['manage_stock'])) {
-                $product->set_manage_stock($args['manage_stock']);
-                $product->set_stock_quantity( $args['stock_quantity'] );
-                $product->set_backorders( isset( $args['backorders'] ) ? $args['backorders'] : 'no' ); // 'yes', 'no' or 'notify'
+
+            // Stock && manage status
+                          
+            $stock = $args['stock_quantity'] ?? $args['stock'] ?? null;
+
+            if ($stock !== null){
+                $product->set_stock_quantity($stock);
             }
+
+            $manage_stock = ($stock !== null) ? true : ($args['manage_stock'] ?? null);
+
+            if ($manage_stock !== null){
+                $product->set_manage_stock($manage_stock);
+            }
+            
+            $product->set_backorders( isset( $args['backorders'] ) ? $args['backorders'] : 'no' ); // 'yes', 'no' or 'notify'
+        
         }
 
         // Sold Individually
@@ -1747,10 +1780,16 @@ class Products extends Posts
             $product->set_default_attributes( $args['default_attributes'] ); 
         }            
 
-        // Images and Gallery
-        static::setImages($pid, $args['gallery_images'] ?? $args['images'] ?? [], $args['image']);
+        // Images and Gallery    
 
-        if ($args['type'] == 'variable' && isset($args['variations'])){
+        $galery_imgs = $args['gallery_images'] ?? $args['images'] ?? [];
+        $featured    = $args['image'] ?? null;
+
+        if (!empty($galery_imgs)){
+            static::setImages($pid, $galery_imgs, $featured);     
+        }
+
+        if (isset($args['type']) && $args['type'] == 'variable' && isset($args['variations'])){
             foreach ($args['variations'] as $variation){
                 static::addVariation($pid, $variation);
             }     
@@ -1764,6 +1803,7 @@ class Products extends Posts
 
         return $product; //
     }
+
 
 
     /*
