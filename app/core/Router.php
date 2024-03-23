@@ -87,48 +87,51 @@ class Router
 			Resolve
 		*/
 	
-		foreach (static::$routes as $route => $fn){
-			$verb  = static::$verbs[$route];
+		if (!empty(static::$routes)){
+			foreach (static::$routes as $route => $fn){
+				$verb  = static::$verbs[$route];
 
-			$route = ltrim($route, '/');
-			
-			// dd($route, 'PROBANDO ROUTE,...');
-	
-			$route_frag = explode('/', $route);
-	
-			// dd($route_frag, 'Fragments');
-	
-			$match = true;
-			foreach ($route_frag as $ix => $f){			
-				if ($f != $_params[$ix]){
-					$match = false;
-					continue;
-				}
-			}
-	
-			if ($match){
-				$class_name     = Strings::before($fn, '@');
-				$controller_obj = new $class_name();
+				$route = ltrim($route, '/');
 				
-				$method = Strings::after($fn, '@');
-				
-				if (empty($method)){
-					$method = 'index';
+				// dd($route, 'PROBANDO ROUTE,...');
+		
+				$route_frag = explode('/', $route);
+		
+				// dd($route_frag, 'Fragments');
+		
+				$match = true;
+				foreach ($route_frag as $ix => $f){			
+					if ($f != $_params[$ix]){
+						$match = false;
+						continue;
+					}
 				}
+		
+				if ($match){
+					$class_name     = Strings::before($fn, '@');
+					$controller_obj = new $class_name();
+					
+					$method = Strings::after($fn, '@');
+					
+					if (empty($method)){
+						$method = 'index';
+					}
 
-				if ($verb != null && $verb != $_SERVER['REQUEST_METHOD']){
-					error('Incorrect verb ('.$_SERVER['REQUEST_METHOD'].'), expecting '. $verb,405);
+					if ($verb != null && $verb != $_SERVER['REQUEST_METHOD']){
+						error('Incorrect verb ('.$_SERVER['REQUEST_METHOD'].'), expecting '. $verb,405);
+					}
+
+					// De momento, nada por aqui
+					$args = [];
+					
+					$data = call_user_func_array([$controller_obj, $method], $args);
+					echo $data; 
+
+					exit;
 				}
-
-				// De momento, nada por aqui
-				$args = [];
-				
-				$data = call_user_func_array([$controller_obj, $method], $args);
-				echo $data; 
-
-				exit;
-			}
-		}	
+			}	
+		}
+		
 	} // end method
 
 } // end class
