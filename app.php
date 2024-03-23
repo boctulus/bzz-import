@@ -96,8 +96,8 @@ DB::setPrimaryKeyName('ID');
 
 if (defined('WP_DEBUG_DISPLAY') && WP_DEBUG_DISPLAY){
 	error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
-} else {
-    ini_set('display_errors', 0);
 }
+
+ini_set('display_errors', 0);
 
 credits_to_author();

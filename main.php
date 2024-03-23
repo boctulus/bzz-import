@@ -20,6 +20,12 @@ ini_set("max_execution_time", $config["max_execution_time"] ?? 1800);
 ini_set("upload_max_filesize",  $config["upload_max_filesize"] ?? "50M");
 ini_set("post_max_size",  $config["post_max_size"] ?? "50M");
 
+// Mostrar errores
+if ((php_sapi_name() === 'cli') || (isset($_GET['show_errors']) && $_GET['show_errors'] == 1)){
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+}
 
 /*
     Shortcode

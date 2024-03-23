@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php
 
 namespace boctulus\SW\core\libs;
 
@@ -120,105 +120,153 @@ class Files
 	}
 
 	/*
-		Admite redefinir los nombres de las columnas de la cabecera que interesan. Hay dos formas de hacerlo:
-			
-		Enviando las cabeceras en un array con sus indices de posicion en el array original.
+        Procesa archivo CSV row a row
+
+        @author Pablo Bozzolo
+
+        Ej:
+
+        Files::processCSV($path, ',', true, function($row){
+            // Procesamiento del row
+            dd($row, 'ROW');
+        });
+
+		o si el archivo no tiene cabecera se la puede especificar:
+
+		Files::processCSV($archivo, ';', false, function($p) { 
+			dd($p, 'P (por procesar)');
+		}, [
+			'sku',
+			'stock',
+			'price',
+			'sale_price'
+		]);
+
+		y aun si la tiene se pueden redefinir algunos campos:
+
+		Files::processCSV($archivo, ';', true, function($p) { 
+			dd($p, 'P (por procesar)');
+		}, [
+			'SKU'            => 'sku',
+			'stock_quantiy'  => 'stock',
+			'discount_price' => 'sale_price'
+		]);
+
+		Admite offset y limit
 
 		Ej:
+		
+		Files::processCSV($archivo, ';', false, function($p) { 
+			dd($p, 'P (por procesar)');
+		}, [
+			'sku',
+			'stock',
+			'price',
+			'sale_price'
+		],36332,5);  
 
-		Files::getCSV(ETC_PATH . 'prod_categories.csv', ',', true, true, [
-			3 => 'description',
-			6 => 'parent_slug',
-		])
+		o si el archivo tiene ya cabecera entonces asi:
 
-		Tambien es posible enviar un array asociativo con las columnas a refefinir:
+		Files::processCSV($archivo, ';', true, function($p) { 
+			dd($p, 'P (por procesar)');
+		}, null ,36332,5); 
 
-		Files::getCSV(ETC_PATH . 'prod_categories.csv', ',', true, true, [
-			'Desc'       => 'description',
-			'ParentSlug' => 'parent_slug',
-		])
+    */
+    static function processCSV(string $path, string $separator = ",", bool $header = true, callable $fn, $header_defs = null, $start_line = 0, $limit = false)
+    {
+        $handle = fopen($path, 'r');
 
-		Y pueden agregarse "columnas extra" con sus valores por defecto:
+        if (!$handle) {
+            return;
+        }
 
-		$rows = Files::getCSV($path, ',', true, true, [
-            'SKU' => '__sku__',
-            'IVA' => '__iva__',
-        ], [
-            'nuevo_campo' => 'def_val',
-            'nuevo_campo-2' => 'def_val-2'
-        ])['rows'];
+        if ($header) {
+            $cabecera = fgetcsv($handle, null, $separator);
+            $ch = count($cabecera);
+            $assoc = true;
+        } else {
+            $assoc = false;
+        }
 
+		// Avanzar hasta la línea de inicio
+		for ($i = 0; $i < $start_line; $i++) {
+			fgets($handle);
+		}
+
+        // Puedo re-definir
+        if ($header_defs != null) {
+            $assoc = true;
+
+            if (isset($cabecera) && !empty($cabecera)) {
+                foreach ($cabecera as $ix => $key) {
+                    if ($assoc) {
+                        // Si es un array asociativo, verifica si la columna actual está definida
+                        $head_key = isset($header_defs[$key]) ? $header_defs[$key] : $key;
+                    } else {
+                        // Si no es asociativo, verifica si la columna por posición está definida
+                        $head_key = isset($header_defs[$ix]) ? $header_defs[$ix] : $key;
+                    }
+                    $cabecera[$ix] = $head_key;
+                }
+            } else {
+                $cabecera = $header_defs;
+            }
+
+            $ch = count($cabecera);
+        }
+
+        $count = 0;
+
+        // loop through the file line-by-line
+        while (($data = fgetcsv($handle, null, $separator)) !== false) {
+            $row = [];
+            if ($assoc) {
+                for ($j = 0; $j < $ch; $j++) {
+                    $head_key = $cabecera[$j];
+                    $val = $data[$j] ?? '';
+
+                    $row[$head_key] = $val;
+                }
+            } else {
+                $row = $data;
+            }
+
+            // Ejecuto callback
+            call_user_func($fn, $row);
+
+            unset($data);
+
+            $count++;
+
+            // Verificar si se alcanzó el límite
+            if ($limit !== false && $limit !== null && $count >= $limit) {
+                break;
+            }
+        }
+
+        fclose($handle);
+    }
+
+	/*
+		Cuenta la cantidad de lineas de un archivo de texto
 	*/
-	static function getCSV(string $path, string $separator = ",", bool $header = true, bool $assoc = true, $header_defs = null, $extra_cols = null) {
-		$rows = [];
-	
-		static::existsOrFail($path);
-	
+	static function countLines(string $path): int
+	{
 		$handle = fopen($path, 'r');
-	
-		if ($header) {
-			$cabecera = fgetcsv($handle, null, $separator);
-			$ch = count($cabecera);
-		} else {
-			$assoc = false;
+
+		if (!$handle) {
+			return 0;
 		}
-	
-		// Puedo re-definir
-		if ($header_defs != null) {
-			if (isset($cabecera) && !empty($cabecera)) {
-				foreach ($cabecera as $ix => $key) {
-					if ($assoc) {
-						// Si es un array asociativo, verifica si la columna actual está definida
-						$head_key = isset($header_defs[$key]) ? $header_defs[$key] : $key;
-					} else {
-						// Si no es asociativo, verifica si la columna por posición está definida
-						$head_key = isset($header_defs[$ix]) ? $header_defs[$ix] : $key;
-					}
-					$cabecera[$ix] = $head_key;
-				}
-			} else {
-				$cabecera = $header_defs;
-			}
+
+		$line_count = 0;
+		while (!feof($handle)) {
+			fgets($handle);
+			$line_count++;
 		}
-	
-		// Agregar nuevos campos si se proporcionan
-		if ($extra_cols != null && is_array($extra_cols)) {
-			foreach ($extra_cols as $nuevo_campo => $def_val) {
-				$cabecera[] = $nuevo_campo;
-			}
-		}
-	
-		$i = 0;
-		while (($data = fgetcsv($handle, null, $separator)) !== false) {
-			if ($assoc) {
-				for ($j = 0; $j < $ch; $j++) {
-					$head_key = $cabecera[$j];
-					$val = $data[$j] ?? '';
-	
-					$rows[$i][$head_key] = $val;
-				}
-			} else {
-				$rows[] = $data;
-			}
-	
-			// Agregar valores para los nuevos campos
-			if ($extra_cols != null && is_array($extra_cols)) {
-				foreach ($extra_cols as $nuevo_campo => $def_val) {
-					$rows[$i][$nuevo_campo] = $def_val;
-				}
-			}
-	
-			$i++;
-		}
-	
-		if ($header) {
-			return [
-				'rows'   => $rows,
-				'header' => $cabecera ?? []
-			];
-		}
-	
-		return $rows;
+
+		fclose($handle);
+
+		return $line_count;
 	}
 	
 
